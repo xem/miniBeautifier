@@ -1,7 +1,7 @@
 <!doctype html>
 <meta charset=utf-8>
 <textarea id=input cols=60 rows=30></textarea>
-<textarea id=output cols=60 rows=30></textarea>
+<textarea id=output cols=80 rows=30></textarea>
 <br>
 <br>
 <button id=mytests>Load comments / divisions / regex / strings tests</button>
@@ -50,7 +50,6 @@ inline_comments=[];
 multiline_comments=[];
 strings=[];
 regexes=[];
-divisions=[];
 
 // Loop
 for(i=0;i<100;i++){
@@ -121,11 +120,12 @@ js=js.replace(/ *([,]) */g,"$1 ");
 js=js.replace(/ *([;\{\}]) */g,"$1\n");
 
 /// Put for loops on one line
-js=js.replace(/for\s*\([^;]*?;[^;]*?;[^\)]*?\)/gm,function(a){return a.replace(/\n/g,"")});
+js=js.replace(/for\s*\([^;]*?;[^;]*?;[^\)]*?\)/gm,function(a){return a.replace(/\n/g,"").replace(/;/g,"; ")});
 
 // Ensure "}" are on a new line
 js=js.replace(/}/g,"\n}");
 
+js=js.replace(/(case|default).*?: */g,"$&\n");
 
 /// Indent lines
 indentation = 0;
@@ -144,27 +144,33 @@ js=js.replace(/(@@REGEX\d@@) \)/g,"$1)");
 js=js.replace(/@@REGEX(\d+)@@/g, function(a,b){return regexes[b]});
 
 // Put back divisions
-js=js.replace(/ *@@DIV@@ */g, " / ");
+js=js.replace(/ *@@DIV@@ * /g, " / ");
 
 
 /// Various cleanups
 js=js.replace(/}\n *,/g,"},");
 js=js.replace(/\{\n\s*\}/g,"{},");
 js=js.replace(/,,/g,", ,");
-js=js.replace(/ :/g,":");
 js=js.replace(/(=>?){/g,"$1 {");
 js=js.replace(/(!+)\s+/g,"$1");
+js=js.replace(/\)([^ ({];)/g,") $1");
+js=js.replace(/(\+\+|--) (,;&|=<>)/g,"$1$2");
+js=js.replace(/(,;&|=<>) (\+\+|--)/g,"$1$2");
 
 /// Clean line breaks again
-js=js.replace(/\n *\n/g, "\n");
+js=js.replace(/\s*\n/g, "\n");
 js=js.replace(/\n *;\n/g, ";\n");
 js=js.replace(/}\n *\)((\(\))?;?)\n/g, "})$1\n");
+js=js.replace(/([\(\{\[]) *([-+]) *(\d)/g,"$1$2$3");
 
 // Output
-output.innerHTML=js + "\n";
+output.innerHTML=js;
 
 }
 
+
+// @todo: for(;;inner_parens(inner_inner())){}
+// @todo: /[a/b]/
 </script>
 
 <script type=tests id=comments_divs_regex_strings_tests>/regex_at_the_beginning/;
@@ -266,7 +272,8 @@ a=[a[1],b[4],c[d[7]]]
 [1,2,[3,4,[5,6],7],8]
 [[["1","2"],["3","4"]],[["5","6","7"],["8","9","0"]],[["1","2","3"],["4","5","6","7"],["8","9","0"]]]
 if(p) foo(a,b);
-try{while(true){willThrow()}}catch(result)switch(result){case 1:++result }
+try{while(true){willThrow()}}catch(result)
+switch(result){case 1:++result }
 ((e/((a+(b)*c)-d))^2)*5;
 function f(a,b) {if(a) b()}function g(a,b) {if(!a) b()}
 a=[];
@@ -427,8 +434,6 @@ do { a(); } while ( 1 );
 do {} while (1);
 delete x if (a) b();
 delete x[x] if (a) b();
-for(var a=1,b=2)d
-for(var a=1,b=2,c=3) d
 for(var a=1,b=2,c=3;d<3;d++)e
 function x(){(a||b).c()}
 function x(){return - 1}

@@ -154,14 +154,20 @@ js=js.replace(/,,/g,", ,");
 js=js.replace(/(=>?){/g,"$1 {");
 js=js.replace(/(!+)\s+/g,"$1");
 js=js.replace(/\)([^ ({];)/g,") $1");
-js=js.replace(/(\+\+|--) (,;&|=<>)/g,"$1$2");
-js=js.replace(/(,;&|=<>) (\+\+|--)/g,"$1$2");
+js=js.replace(/(\+\+|--) ([,;&|=<>])/g,"$1$2");
+js=js.replace(/([\n\)] *\+\+|--) /g,"$1");
+js=js.replace(/([,;&|=<>]) (\+\+|--)/g,"$1$2");
 
 /// Clean line breaks again
 js=js.replace(/\s*\n/g, "\n");
+
+// Misc
 js=js.replace(/\n *;\n/g, ";\n");
 js=js.replace(/}\n *\)((\(\))?;?)\n/g, "})$1\n");
-js=js.replace(/([\(\{\[]) *([-+]) *(\d)/g,"$1$2$3");
+js=js.replace(/([\(\{\[]|case ) *([-+]) *(\d)/g,"$1$2$3");
+js=js.replace(/(if|while) \(/g,"if(");
+js=js.replace(/\( *([\w\d]*) *\)/g,"($1)");
+js=js.replace(/}\n *]/g,"}]");
 
 // Output
 output.innerHTML=js;
@@ -466,12 +472,6 @@ if(true)++a;
 if(true)++a;
 if(true)--a;
 if(true)--a;
-{foo++bar;}
-{foo++bar;}
-{foo++bar;}
-a(/abc\\\\/\\\\/def/);b()
-a(/a[b\\\\[\\\\]c]d/);b()
-a(/[a/b]/);b()
 a=[[1,2],[4,5],[7,8]]
 a=[[1,2],[4,5],function(){},[7,8]]
 a=[[1,2],[4,5],function(){},function(){},[7,8]]
@@ -497,7 +497,7 @@ function x(/*int*/ start, /*string*/ foo)
 var a,b,c=1,d,e,f=2;
 var a,b,c=[],d,e,f=2;
 do/regexp/;while(1);
-var a = a,a;b = {b}
+var a = a,a;
 a=typeof(x)
 var whatever = require("whatever");function() {    a = 6;}
 var whatever = require("whatever")function() {    a = 6}

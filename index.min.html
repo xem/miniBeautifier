@@ -2,17 +2,18 @@
 <meta charset=utf-8>
 <body id=b>
 <script>
-b.innerHTML="<textarea id=t cols=90 rows=30 oninput=b(value)>";
+b.innerHTML="<pre contentEditable id=p>";
 
-b=function(j,o){
+oninput=function(){
 
 /* ==== comments, regexes and divisions  ===== */
 
+j=p.innerHTML;
 c=[];
 m=[];
 s=[];
 r=[];
-d=e=f=g=h=0;
+d=e=f=g=h=o=0;
 
 
 // Loop
@@ -133,12 +134,12 @@ j=j.replace(/\( *([\w\d]*) *\)/g,"($1)")
 j=j.replace(/}\n *([\]:])/g,"}$1")
 
 // Output
-t.value=j;
+p.innerHTML=j;
 
 }
 
 onload=function(){
-  t.value=tests.innerHTML;
+  p.innerHTML=tests.innerHTML;
 }
 
 </script>

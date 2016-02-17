@@ -2,49 +2,65 @@
 <meta charset=utf-8>
 <body id=b>
 <script>
-b.innerHTML="<pre contentEditable id=p>";
+
+
+// MINI JS BEAUTIFIER
+
+// Goal: write a tiny JS beautifier that relies heavily on replaces and regular expressions, and aimed at minified and/or packed code
+
+// We want to identify and isolate comments, strings, regexes and divisions, before beautifying the rest of the JS code. But these elements are ambiguous: 
+// Indeed, it's hard to tell is a slash is the start of a comment, the start of a regex, a division sign, or just a character in a string.
+// Or to tell if a (double-)quote is the start of a string, a character inside a string, a character in a comment or a character in a regex.
+// Or to tell if an antislash is part of a string or a regex (as a char or as an escape character), or a character in a comment.
+// We also don't want to beautify the text inside a string, a comment or a RegEx as if it was real JS code.
+// The solution is to make a loop, and at each iteration, see which character (slash, quote or double quote) comes first,
+// Then use the characters around to decide if it's a division sign or the start of a string, a regex, or a comment,
+// Then isolate the string / regex / comment / divisor sign, and replace it temporarly with a token.
+// Repeat until no more slashes or (double-)quotes are found.
+// The tokens will be replaced with their original values later.
+
+
+b.innerHTML="<textarea rows=40 cols=99 id=p>";
 
 oninput=function(){
 
 /* ==== comments, regexes and divisions  ===== */
 
-j=p.innerHTML;
-c=[];
-m=[];
-s=[];
-r=[];
-d=e=f=g=h=o=0;
+j=p.value;  // JS code to beautify
+c=[]; // comments
+s=[]; // strings
+r=[]; // regexes
+d=e=f=g=h=o=0; // counters
 
 
-// Loop
+// Loop while the code is changed
 for(;o!=j;){
 
+  // Backup js code
   o = j;
 
   // Find first ' or " or /
   // and if it's a slash
   if((k=j.match(/['"\/]/))=="/"){
 
-    // Take all the chars before the slash
-    n=j.slice(0,l=j.indexOf(k));
+    // Take all the chars preceding the slash
+    l=j.indexOf(k);
+    n=j.slice(0,l+1);
     
     // Isolate comment if slash is followed by "/" or "*"
-    if(j[l+1]=="/"){
-      j=j.replace(/\/\/.*/,function(a){c.push(a);return"@C"+(e++)+"@"});
-    }
-    else if(j[l+1]=="*"){
-      j=j.replace(/\/\*[^]*?\*\//m,function(a){m.push(a);return"\n@M"+(f++)+"@\n"});
+    if(j[l+1].match(/[\/*]/)){
+      j=j.replace(/\/\/.*|\/\*[^]*?\*\//,function(a){c.push(a);return"@C"+(e++)+"@"});
     }
     
     // Isolate division if slash follows a digit, a variable, a boolean, ")",  "}", "]", null, undefined, this, etc. (plus optional spaces / line jumps / comments)
     // If regex detection is exhaustive, this test can be removed, and all the unidentified slashes will be considered as a division by the "else" below.
-    else if(n.match(/([\d\)\]\}]|true|false|null|undefined|this|@S\d+@)\s*(@C\d+@|@M\d+@)*\s*/im)){
+    else if(n.match(/([\d\)\]\}]|true|false|null|undefined|this|@S\d+@)\s*(@C\d+@)*\s*\//im)){
       j=j.replace("/","@D@");
     }
 
     // Isolate RegEx if slash is at the start of the j code or follows an operator, ",", ";", "[", "(" etc. (plus optional spaces / line jumps / comments / division)
     // Also if slash follows these keywords followed by space or line break: case delete else return throw yield debugger continue break throw return.
-    else if(n.match(/([-,;=><+%*&|^~!?!:\[\(]|delete|typeof|void|in|instanceof|of|case|delete|else|return|throw|yield|debugger|continue|break|throw|return|@D@|^)\s*(@C\d+@|@M\d+@)*\s*/m)){
+    else if(n.match(/([-,;=><+%*&|^~!?!:\[\(]|delete|typeof|void|in|instanceof|of|case|delete|else|return|throw|yield|debugger|continue|break|throw|return|@D@|^)\s*(@C\d+@)*\s*\//m)){
       j=j.replace(/\/(\\\\|\\\/|[^\/])+?\/[gimuy]*/,function(a){r.push(a);return"@R"+(g++)+"@"});
     }
     
@@ -55,15 +71,17 @@ for(;o!=j;){
   }
   
   // Isolate strings, including escape sequences
+  else if(k=="'"){
+    j=j.replace(/'(\\\\|\\'|[^'])*?'/,function(a){s.push(a);return"@S"+(h++)+'@'});
+  }
   else{
-    j=j.replace(/'(\\\\|\\'|[^'])*?'|"(\\\\|\\"|[^"])*?"/m,function(a){s.push(a);return"@S"+(h++)+'@'});
+    j=j.replace(/"(\\\\|\\"|[^"])*?"/,function(a){s.push(a);return"@S"+(h++)+'@'});
   }
   
-  
+  p.value=j;
 }
 
 /* ===== end ===== */
-
 
 // Reformat the rest:
 
@@ -73,7 +91,7 @@ j=j.replace(/[\r\n]+ */g,"\n")
 /// reduce spaces
 j=j.replace(/ +/g," ")
 
-//// Ensure there are spaces around some operators (including "/" and "/=" while the division sign is replaced by @DIV@)
+//// Ensure there are spaces around some operators (including "/" and "/=" while the division sign is replaced by @D@)
 j=j.replace(/ *(@D@=?|[+\-\*%=&\|:?<>^]+) */g," $1 ")
 
 /// Add spaces after some operators
@@ -96,7 +114,6 @@ j=j.replace(/.*?([\{\}])?\n/g,function(a,b){b+="";if(b[0]=="{"){return"  ".repea
 
 // Put back comments
 j=j.replace(/@C(\d+)@/g,function(a,b){return c[b]})
-j=j.replace(/@M(\d+)@/g,function(a,b){return m[b]})
 
 
 // Put back strings
@@ -134,17 +151,92 @@ j=j.replace(/\( *([\w\d]*) *\)/g,"($1)")
 j=j.replace(/}\n *([\]:])/g,"}$1")
 
 // Output
-p.innerHTML=j;
+p.value=j;
 
 }
 
 onload=function(){
-  p.innerHTML=tests.innerHTML;
+  p.value=tests.innerHTML;
+  oninput();
 }
 
 </script>
 
 <script type=tests id=tests>/regex_at_the_beginning/;
+
+1;
+// comment
+
+// comment with "string" 'string' /regex/ slash: /, doubleslash: //, quotes: "', /*comment*/ anything: \\\/////\/\//////\\\n
+
+/* comment */
+
+/* multiline
+comment */
+
+2;
+
+'';
+
+'string';
+
+"string";
+
+"escaped\"doublequote";
+
+'escaped\'quote';
+
+"not escaped doublequote \\";
+
+'not escaped quote \\';
+
+' string with quotes ", escapes: \', /regex/, /* comments */, // comments'
+
+"string with quotes ', escapes: \", /regex/, /* comments */, // comments"
+
+"\\\\"
+
+'\\\\'
+
+"escaped \
+newline"
+
+'escaped\
+newline'
+
+3;
+
+1/2
+
+a / b
+
+4;
+
+/regex/;
+
+/regex/gumiy;
+
+/regex with \/ escape \\\/ escape "string" 'string'/;
+
+/ /;
+
+/\\\\/;
+
+// /[a/b]/
+
+
+5;
+
+/0//0
+
+/1/ /regex/ /"string/"// <-- comment starts here /
+
+0/ /regex//1// <-- comment starts here
+
+/2/ /* comment *//1/g// <-- comment starts here
+
+// hmm
+
 if ('this_is'==/an_example/){of_beautifier();}else{var a=b?(c%d):e[f];}
 for (var line=1; line<30; line++) {
 for(var i=1;i<29;i++) {
@@ -175,6 +267,10 @@ function f(a,b) {if(a) b()}function g(a,b) {if(!a) b()}
 a=[];
 a=[b,c,d];
 a= f[b];
+
+
+
+
 async function foo() {}
 let w = async function foo() {}
 async function foo() {}var x = await foo();
@@ -203,6 +299,8 @@ if (x) {
 if (y) {
     c();
 }}
+
+
 a        =          1
 a=1
 ["a", "b"].join("")
@@ -272,6 +370,9 @@ a=0b0B0xb0
 a=0b0B0x0b0
 a=0B090x0
 a=0Bg0b0o0
+
+
+
 F*(g/=f)*g+b
 a.b({c:d})
 a.b({c:d})
@@ -302,42 +403,15 @@ for(;;i++)a()
 for(;;++i)a
 return(1)
 try{a();}catch(b){c();}finally{d();}
-(xx)()'
-a[1]()'
+(xx)()
+a[1]()
 if(a){b();}else if(c) foo();
 switch(x) {case 0: case 1: a(); break; default: break}
 switch(x){case -1:break;case !y:break;}
 a !== b
 if (a) b(); else c();
-// comment(function something() {})
-{    x();}
-if (a in b) foo();
-if(X)if(Y)a();else b();else c();
-if (foo) bar();else break
-{a:1, b:2}
-a={1:[-1],2:[+1]}
-var l = {'a':'1', 'b':'2'}
-if (template.user[n] in bk) foo();
-a = 1;// comment
-a = 1; // comment
-o = [{a:b},{c:d}]
-if (a) {    do();}
-if (a) {// comment}else{// comment}
-}
-if (a) b() else c();
-if (a) b() else if c() d();
-do { a(); } while ( 1 );
-do {} while (1);
-delete x if (a) b();
-delete x[x] if (a) b();
-for(var a=1,b=2,c=3;d<3;d++)e
-function x(){(a||b).c()}
-function x(){return - 1}
-function x(){return ! a}
-x => { x }
-(x) => { x }
-settings = $.extend({},defaults,settings);
-// reserved words used as property names
+
+
 $http().then().finally().default()
 $http().when.in.new.catch().throw()
 {xxx;}()
@@ -399,4 +473,5 @@ var whatever = require("whatever")function() {    a = 6}
 if (x) {y} else { if (x) {y}}
 var a=1,b={bang:2},c=3;
 var a={bing:1},b=2,c=3;
+
 </script>

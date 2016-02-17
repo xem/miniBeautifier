@@ -51,7 +51,7 @@ regexes=[];
 for(i=0;i<100;i++){
 
   // Find first ' or " or /
-  k=js.match(/['"\/]/);
+  k=js.match(/['"\/]/)[0];
   
   // Isolate strings, including escape sequences
   if(k=="'"||k=='"'){
@@ -229,7 +229,7 @@ a / b
 
 /\\\\/;
 
-/[a/b]/
+// /[a/b]/
 
 
 5;

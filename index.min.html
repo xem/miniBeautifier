@@ -55,7 +55,7 @@ for(;o!=j;){
     // Identify a regex if:
     // - It's not a division (it's a division if slash follows a digit, a variable, a boolean, ")",  "}", "]", null, undefined, this (plus optional spaces / line jumps / comments))
     // - It's a regex (slash at the start of the js code or follows an operator, ",", ";", "[", "(", or a keyword from this list, (plus optional spaces / line jumps / comments / division)):
-    // case delete else return throw yield debugger continue break throw return
+    //   case, delete, else, return, throw, yield, debugger, continue, break, throw, return
     else if(
       !n.match(/([\d\)\]\}]|true|false|null|undefined|this|@S\d+@)\s*(@C\d+@)*\s*\//im)
       && n.match(/([-,;=><+%*&|^~!?!:\[\(]|delete|typeof|void|in|instanceof|of|case|delete|else|return|throw|yield|debugger|continue|break|throw|return|@D@|^)\s*(@C\d+@)*\s*\//m)
@@ -63,7 +63,7 @@ for(;o!=j;){
       j=j.replace(/\/(\\\\|\\\/|[^\/])+?\/[gimuy]*/,function(a){r.push(a);return"@R"+(g++)+"@"})
     }
     
-    // Unknown case (assume it's a division)
+    // Else it's a division
     else{
       j=j.replace("/","@D@");
     }
@@ -77,67 +77,128 @@ for(;o!=j;){
     j=j.replace(/"(\\\\|\\"|[^"])*?"/,function(a){s.push(a);return"@S"+(h++)+'@'})
   }
   
-  p.value=j;
+  //p.value=j;
 }
 
 /* ===== end ===== */
 
-// Reformat the rest:
+/* ===== Reformat the rest ===== */
+
+// Put back divisions
+j=j.replace(/@D@/g,"/")
+
+// Ensure there are spaces around operators (/, +, -, *, %, =, &, |, :, ?, <, >, ^, plus composed operators, like >>=)
+j=j.replace(/ *([-+*%=&|:?<>^/]+) */g," $1 ")
+
+// Ensure there are spaces after some operators (,)
+j=j.replace(/ *, */g,", ")
+
+// Ensure there are line jumps after some operators ("}"
+j=j.replace(/}/g,"\n}")
+
+// Ensure there are line jumps after some operators (;, {, } and after "case ...:" or "default :")
+j=j.replace(/ *([;{}]|(case|default).*?:) */g,"$1\n")
 
 // Clean line breaks
 j=j.replace(/[\r\n]+ */g,"\n")
 
-// reduce spaces
-j=j.replace(/ +/g," ")
-
-// Ensure there are spaces around some operators (including "/" and "/=" while the division sign is replaced by @D@)
-j=j.replace(/ *(@D@=?|[+\-\*%=&\|:?<>^]+) */g," $1 ")
-
-// Add spaces after some operators
-j=j.replace(/ *([,]) */g,"$1 ")
-
-// Add line jumps after some operators
-j=j.replace(/ *([;\{\}]) */g,"$1\n")
-
 // Put for loops on one line
 j=j.replace(/for\s*\([^;]*?;[^;]*?;[^]/g,function(a){return a.replace(/\n/g,"").replace(/;/g,"; ")})
 
-// Ensure "}" are on a new line
-j=j.replace(/}/g,"\n}")
 
-// Line break after "case ..." : or "default :"
-j=j.replace(/(case|default).*?: */g,"$&\n")
 
-// Reindent lines
-j=j.replace(/.*?([\{\}])?\n/g,function(a,b){b+="";if(b[0]=="{"){return"  ".repeat(d++)+a}else if(b[0]=="}"){d--}return"  ".repeat(d)+a})
 
+// Reindent lines (indentation changes after a { or a } ) (to fix)
+j=j.replace(/.*?([{}])?\n/g,function(a,b){b+="";if(b[0]=="{"){return"  ".repeat(d++)+a}else if(b[0]=="}"){d--}return"  ".repeat(d)+a})
+
+
+
+
+
+
+// Clean line breaks
+j=j.replace(/\n+/g,"\n")
+
+
+/*
 // Put back comments
 j=j.replace(/@C(\d+)@/g,function(a,b){return c[b]})
-
 
 // Put back strings
 j=j.replace(/@S(\d+)@/g,function(a,b){return s[b]})
 
 // Put back regexes
-j=j.replace(/(@R\d@) \)/g,"$1)")
 j=j.replace(/@R(\d+)@/g,function(a,b){return r[b]})
 
-// Put back divisions
-j=j.replace(/ *@D@ */g," / ")
-j=j.replace(/\/ =/g,"/=")
+*/
+
+
+/* ===== end ===== */
+
+
+
+
+// Output
+p.value=j;
+
+}
+
+onload=function(){
+  p.value=tests.innerHTML;
+  oninput();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</script>
+
+<script type=tmp>
+
+
+
+
+
+
+
+
+
+
+
 
 
 // Various cleanups
+j=j.replace(/\/ \)/g,"/)")
 j=j.replace(/}\n *,/g,"},")
 j=j.replace(/\{\n\s*\}/g,"{}")
 j=j.replace(/,,/g,", ,")
 j=j.replace(/(=>?){/g,"$1 {")
 j=j.replace(/(!+)\s+/g,"$1")
 j=j.replace(/\)([^ ({];)/g,") $1")
-j=j.replace(/ (\+\+|--) *(\))/g,"$1$2")
-j=j.replace(/(\+\+|--) ([,;&|=<>])/g,"$1$2")
-j=j.replace(/([\n\)] *\+\+|--) /g,"$1")
-j=j.replace(/([,;&|=<>]) (\+\+|--)/g,"$1$2")
+j=j.replace(/(\+\+|--) *([,;\)])/g,"$1$2")
+j=j.replace(/(\+\+|--) *([<>])/g,"$1 $2")
+j=j.replace(/(\n) *(\+\+|--)/g,"$1")
+j=j.replace(/([,;&|=<>\)]) *(\+\+|--) */g,"$1 $2")
 
 // Clean line breaks again
 j=j.replace(/\s*\n/g,"\n")
@@ -150,15 +211,6 @@ j=j.replace(/(if|while) \(/g,"if(")
 j=j.replace(/\( *([\w\d]*) *\)/g,"($1)")
 j=j.replace(/}\n *([\]:])/g,"}$1")
 
-// Output
-p.value=j;
-
-}
-
-onload=function(){
-  p.value=tests.innerHTML;
-  oninput();
-}
 
 </script>
 

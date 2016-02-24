@@ -24,9 +24,15 @@ b.innerHTML="<textarea rows=40 cols=99 id=p>";
 
 oninput=function(){
 
+j=p.value;  // JS code to beautify
+
+// Unpack regpacked code (finishing with "eval(.)") 
+if((z=j.replace(/eval\((.)\)$/,"j=$1"))!=j){
+  eval(z);
+}
+
 /* ==== comments, regexes and divisions  ===== */
 
-j=p.value;  // JS code to beautify
 c=[]; // comments
 s=[]; // strings
 r=[]; // regexes
@@ -88,7 +94,7 @@ for(;o!=j;){
 j=j.replace(/@D@/g,"/")
 
 // Ensure there are spaces around operators (/, +, -, *, %, =, &, |, :, ?, <, >, ^, plus composed operators, like >>=)
-j=j.replace(/ *([-+*%=&|:?<>^/]+) */g," $1 ")
+j=j.replace(/ *(--|\+\+|[-+*%=&|:?<>^/]+) */g," $1 ")
 
 // Ensure there are spaces after some operators (,)
 j=j.replace(/ *, */g,", ")
@@ -116,11 +122,45 @@ j=j.replace(/.*?([{}])?\n/g,function(a,b){b+="";if(b[0]=="{"){return"  ".repeat(
 
 
 
+
+
+
+//// Various (to golf)
+
+j=j.replace(/\/ \)/g,"/)")
+j=j.replace(/}\s*,/g,"},")
+j=j.replace(/\{\s*\}/g,"{}")
+j=j.replace(/\(\s*\)/g,"()")
+j=j.replace(/}\s*\)/g,"})")
+j=j.replace(/!\s*/g,"!")
+j=j.replace(/,,/g,", ,")
+j=j.replace(/=>{/g,"=> {")
+j=j.replace(/\)\s*([({;])/g,")$1")
+
+
+/*j=j.replace(/(\+\+|--) *([,;\)])/g,"$1$2")
+j=j.replace(/(\+\+|--) *([<>])/g,"$1 $2")
+j=j.replace(/(\n) *(\+\+|--)/g,"$1")
+j=j.replace(/([,;&|=<>\)]) *(\+\+|--) *----/g,"$1 $2")*/
+
+//j=j.replace(/\n *;\n/g,";\n")
+//j=j.replace(/([\(\{\[]|case ) *([-+]) *(\d)/g,"$1$2$3")
+//j=j.replace(/(if|while) \(/g,"if(")
+//j=j.replace(/\( *([\w\d]*) *\)/g,"($1)")
+//j=j.replace(/}\n *([\]:])/g,"}$1")
+
+/// end
+
+
+
+
+
+
+
+
 // Clean line breaks
 j=j.replace(/\n+/g,"\n")
 
-
-/*
 // Put back comments
 j=j.replace(/@C(\d+)@/g,function(a,b){return c[b]})
 
@@ -130,12 +170,8 @@ j=j.replace(/@S(\d+)@/g,function(a,b){return s[b]})
 // Put back regexes
 j=j.replace(/@R(\d+)@/g,function(a,b){return r[b]})
 
-*/
-
 
 /* ===== end ===== */
-
-
 
 
 // Output
@@ -148,68 +184,6 @@ onload=function(){
   oninput();
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-</script>
-
-<script type=tmp>
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Various cleanups
-j=j.replace(/\/ \)/g,"/)")
-j=j.replace(/}\n *,/g,"},")
-j=j.replace(/\{\n\s*\}/g,"{}")
-j=j.replace(/,,/g,", ,")
-j=j.replace(/(=>?){/g,"$1 {")
-j=j.replace(/(!+)\s+/g,"$1")
-j=j.replace(/\)([^ ({];)/g,") $1")
-j=j.replace(/(\+\+|--) *([,;\)])/g,"$1$2")
-j=j.replace(/(\+\+|--) *([<>])/g,"$1 $2")
-j=j.replace(/(\n) *(\+\+|--)/g,"$1")
-j=j.replace(/([,;&|=<>\)]) *(\+\+|--) */g,"$1 $2")
-
-// Clean line breaks again
-j=j.replace(/\s*\n/g,"\n")
-
-// Misc
-j=j.replace(/\n *;\n/g,";\n")
-j=j.replace(/}\n *\)((\(\))?;?)\n/g,"})$1\n")
-j=j.replace(/([\(\{\[]|case ) *([-+]) *(\d)/g,"$1$2$3")
-j=j.replace(/(if|while) \(/g,"if(")
-j=j.replace(/\( *([\w\d]*) *\)/g,"($1)")
-j=j.replace(/}\n *([\]:])/g,"}$1")
 
 
 </script>
